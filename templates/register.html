@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/static/jQuery.js"></script>
+    <link rel="stylesheet" href="/static/bootstrap-3.4.1-dist/css/bootstrap.min.css">
+    <script src="/static/bootstrap-3.4.1-dist/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <h1 class="text-center text-info">注册功能</h1>
+            <form action="" id="id_form">
+                {% csrf_token %}
+                {% for foo in form_obj %}
+                    <div class="form-group">
+                        <label for="{{ foo.id_for_label }}">{{ foo.label }}</label>
+                        {{ foo }}
+                        <span class="pull-right text-danger"></span>
+                    </div>
+                {% endfor %}
+                <div class="form-group">
+                    <label for="id_file">头像
+                        <img src="/static/default.png" alt="" height="100px" width="100px" style="margin-right: 20px"
+                             id="id_img">
+                        <input type="file" id="id_file" accept="image/*" style="display: none">
+                    </label>
+                </div>
+                <div class="form-group text-center">
+                    <!--提交按钮不能是submit或者单独的button按钮 如果写了ajax 点击提交 就会发送两次请求-->
+                    <input type="button" value="注册" class="btn btn-success form-control" id="id_submit">
+                    <span class="text-danger error"></span>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // 头像动态显示
+    $('#id_file').change(function () {
+        // 将上传的头像展示到img标签内 修改img标签内的src参数
+
+        // 读出图片文件 借助于文件阅读器
+        let reader = new FileReader()
+
+        // 拿到文件对象
+        let file = $('#id_file')[0].files[0]
+
+        // 将文件对象读到文件阅读器中
+        reader.readAsDataURL(file)
+
+        // 文件加载完后修改img标签的src参数
+        reader.onload = function () {
+            {#$('#id_img')[0].src=reader.result#}
+            $('#id_img').attr('src', reader.result)
+        }
+    })
+
+
+    // 发送ajax请求
+    $('#id_submit').click(function () {
+        let data = new FormData
+
+        // 方式一：根据id获取标签数据添加至data中
+        {#data.append('name', $('#id_name').val())#}
+        {#data.append('password', $('#id_password').val())#}
+        {#data.append('re_password', $('#id_re_password').val())#}
+        {#data.append('email', $('#id_email').val())#}
+        {#data.append('icon', $('#id_file')[0].files[0])#}
+        {#data.append('csrfmiddlewaretoken', $("[name='csrfmiddlewaretoken']").val())#}
+        {#$.ajax({#}
+        {#    url: '/register/',#}
+        {#    type: 'post',#}
+        {#    data: data,#}
+        {#    processData:false,#}
+        {#    contentType:false,#}
+        {#    success: function (data) {#}
+        {##}
+        {#    }#}
+        //})
+
+
+        // 方式二：利用form组件批量处理
+        let data_arr = $('#id_form').serializeArray()
+        console.log(data_arr)  // 是一个数组套对象 对象中k是name v是value 自动添加csrf
+
+        // 使用for循环把数据添加到data对象中
+        $.each(data_arr, function (i, v) {// each 每
+            data.append(v.name, v.value)
+            console.log("index:",i)
+            console.log("value:", v)
+            console.log("-----------------------")
+        })
+
+        // 文件需要单独放入
+        data.append('icon', $('#id_file')[0].files[0])
+
+        // 使用ajax发送请求
+        $.ajax({
+            url: '/register/',
+            type: 'post',
+            data: data,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                console.log(data)
+                if (data.code === 100) {
+                    // 注册成功跳转至登录界面
+                    location.href = '/login/'
+                } else {
+                    // 在前端渲染出错误信息
+                    console.log(data)
+                    $.each(data.errors, function (k, v) {
+                        // email:['这个字段是必填项。']
+                        if (k === '__all__') {
+                            // 全局钩子错误 两次密码不一致
+                            $('#id_submit').next().html(data.errors['__all__'][0])
+                        } else {
+                            // 其他错误找到相应的input框后的span标签渲染
+                            $('#id_' + k).next().html(v[0]).parent().addClass('has-error')
+                        }
+                    })
+
+
+                    // 定时任务 渲染的错误信息三秒后清除
+                    setTimeout(function () {
+                        // 把所有的span标签的内容清除 父类中的属性has-error去除
+                        $('.text-danger').html('').parent().removeClass('has-error')
+                    }, 3000)
+                }
+            }
+        })
+    })
+
+
+    // 后端ajax校验用户名是否存在
+    // 前端使用get请求传入用户名
+
+    // 绑定一个失去焦点事件
+    $('#id_username').blur(function () {
+        $.ajax({
+            url: '/check_name/?name=' + $('#id_username').val(),
+            type: 'get',
+            success: function (data) {
+                if (data.code === 110) {
+                    $('#id_username').next().html(data.msg)
+                }else {
+                    $('#id_username').next().html('')
+                }
+            }
+        })
+    })
+</script>
+
+</body>
+</html>
