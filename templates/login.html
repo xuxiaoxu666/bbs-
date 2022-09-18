@@ -3,33 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    {% load static %}
-    <script src="{% static 'jQuery.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'bootstrap-3.4.1-dist/css/bootstrap.min.css' %}">
-    <script src="{% static 'bootstrap-3.4.1-dist/js/bootstrap.min.js' %}"></script>
+    <script src="/static/jQuery.js"></script>
+    <link rel="stylesheet" href="/static/bootstrap-3.4.1-dist/css/bootstrap.min.css">
+    <script src="/static/bootstrap-3.4.1-dist/js/bootstrap.min.js"></script>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-6 col-md-offset-3">
-                <h1 class="text-center text-info">登录功能</h1>
-                <form action="" method="post">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label for="id_username">用户名</label>
-                        <input type="text" id="id_username" name="username" class="form-control">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <h1 class="text-center text-info">登录功能</h1>
+            <form action="" id="id_form" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_username">用户名</label>
+                    <input type="text" id="id_username" name="username" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="id_password">密码</label>
+                    <input type="password" id="id_password" name="password" class="form-control">
+                </div>
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="id_code">验证码</label>
+                        <input type="text" id="id_code" class="form-control" name="code">
                     </div>
-                    <div class="form-group">
-                        <label for="id_password">密码</label>
-                        <input type="password" id="id_password" name="password" class="form-control">
+                    <div class="col-md-6">
+                        <img src="/get_code/" alt="" id="id_img" width="350px" height="50px">
                     </div>
-                    <div class="form-group">
-                        <input type="submit" value="登录" class="btn btn-block">
+                </div>
+                <div class="form-group">
+                    <input type="button" value="登录" class="btn btn-block btn-danger" id="id_submit">
+                    <div class="text-center">
+                        <span  class="text-danger error"></span>
                     </div>
-                </form>
-            </div>
-        </div>
+                </div>
+            </form>
 
+            <script>
+                // 点击验证码图片刷新验证码
+                $('#id_img').click(function () {
+                    let time = new Date().getTime()
+                    console.log(time)
+                    $('#id_img')[0].src = '/get_code/?t=' + time
+                })
+
+                // 提交ajax
+                $('#id_submit').click(function () {
+                    let dataArray = $('#id_form').serializeArray()
+                    console.log(dataArray)
+                    $.ajax({
+                        url: '/login/',
+                        type: 'post',
+                        data: dataArray,
+                        success: function (data) {
+                            console.log(data)
+                            if(data.code===100){
+                                location.href = '/'
+                            }else {
+                                $('.error').html(data.msg)
+                            }
+                        }
+                    })
+                })
+
+
+                // 定时器任务 自动关闭错误提示信息
+                let test = function () {
+                    $('.error').html('')
+                }
+                // 循环执行
+                timer = setInterval(test, 2000)
+
+                //60秒后关闭循环定时任务
+                setTimeout(function () {
+                    clearTimeout(timer)
+                },60*1000)
+            </script>
+        </div>
     </div>
+
+</div>
 </body>
 </html>
